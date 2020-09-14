@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "strict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "outDir": "dist"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
