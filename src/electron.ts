@@ -1,21 +1,26 @@
 import { app, BrowserWindow } from 'electron';
+import { PianoConnector } from './piano-connector';
 
-function createWindow () {
+function createWindow (): BrowserWindow {
   // Create a browser window
-  const win: BrowserWindow = new BrowserWindow({
+  const appWindow: BrowserWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
       nodeIntegration: true
     }
-  });
+  })
+  appWindow.loadFile('index.html');
 
-  win.loadFile('index.html');
+  return appWindow;
 }
 
 // Called when Electron has finished initialization
 // and is ready to create browser windows
-app.on('ready', createWindow);
+app.on('ready', () => {
+  const appWindow: BrowserWindow = createWindow();
+  new PianoConnector(appWindow);
+});
 
 // Close app when all windows are closed except on macOS
 app.on('window-all-closed', () => {

@@ -1,5 +1,6 @@
 /* eslint-disable */
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const webpack = require('webpack')
 
 module.exports = [
   {
@@ -13,10 +14,18 @@ module.exports = [
         use: ['ts-loader', 'eslint-loader']
       }]
     },
+    resolve: {
+      extensions: ['.ts']
+    },
     output: {
       path: `${__dirname}/dist`,
       filename: 'electron.js'
-    }
+    },
+    plugins: [
+      new webpack.ExternalsPlugin('commonjs', [
+        'usb'
+      ])
+    ]
   },
   {
     mode: 'development',
