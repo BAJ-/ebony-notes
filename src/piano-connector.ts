@@ -74,7 +74,7 @@ export class PianoConnector {
   private listenForPianoDevice() {
     this.emit('piano-list', this.getPianoIdentities());
     onUsbEvent('attach', () => this.emit('piano-list', this.getPianoIdentities()));
-    onUsbEvent('detatch', () => this.emit('piano-list', this.getPianoIdentities()));
+    onUsbEvent('detach', () => this.emit('piano-list', this.getPianoIdentities()));
   }
 
   /**
