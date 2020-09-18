@@ -5,7 +5,7 @@ import { Stage } from './stage';
 export class Container extends React.PureComponent<unknown, unknown> {
   public render(): JSX.Element {
     return (
-      <div>
+      <div className="text-gray-800">
         <Navigation />
         <Stage />
       </div>

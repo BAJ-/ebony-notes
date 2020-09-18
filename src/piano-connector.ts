@@ -5,7 +5,7 @@ import {
 } from 'usb';
 import { keyNotes, KeyNote } from './data/midi-hex-table';
 
-interface PianoIdentity {
+export interface PianoIdentity {
   deviceAddress: number;
   vendorName: string;
 }
