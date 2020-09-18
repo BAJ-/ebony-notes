@@ -19,7 +19,9 @@ function createWindow (): BrowserWindow {
 // and is ready to create browser windows
 app.on('ready', () => {
   const appWindow: BrowserWindow = createWindow();
-  new PianoConnector(appWindow);
+  appWindow.on('show', ()=> {
+    new PianoConnector(appWindow);
+  });
 });
 
 // Close app when all windows are closed except on macOS
