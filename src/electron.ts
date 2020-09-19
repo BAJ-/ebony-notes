@@ -4,8 +4,9 @@ import { PianoConnector } from './piano-connector';
 function createWindow (): BrowserWindow {
   // Create a browser window
   const appWindow: BrowserWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    show: false,
+    width: 1200,
+    height: 500,
     webPreferences: {
       nodeIntegration: true
     }
@@ -19,7 +20,8 @@ function createWindow (): BrowserWindow {
 // and is ready to create browser windows
 app.on('ready', () => {
   const appWindow: BrowserWindow = createWindow();
-  appWindow.on('show', ()=> {
+  appWindow.on('ready-to-show', () => {
+    appWindow.show();
     new PianoConnector(appWindow);
   });
 });
