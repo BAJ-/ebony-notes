@@ -6,7 +6,7 @@ function createWindow (): BrowserWindow {
   const appWindow: BrowserWindow = new BrowserWindow({
     show: false,
     width: 1200,
-    height: 500,
+    height: 800,
     webPreferences: {
       nodeIntegration: true
     }

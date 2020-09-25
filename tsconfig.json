@@ -5,7 +5,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "target": "ES5"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
