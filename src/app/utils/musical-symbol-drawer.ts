@@ -76,29 +76,31 @@ export class MusicSymbolDrawer {
     this.trepleStafYOffset = this.trepleStafYOffset + this.options.yPadding;
 
     this.trepleClefImg = new Image();
+    this.bassClefImg = new Image();
+    this.quarterNoteImg = new Image();
+    this.loadImages().then(() => this.initCanvas(window, musicState));
+  }
+
+  private loadImages(): Promise<unknown> {
     // TODO: Put images somewhere else
     this.trepleClefImg.src = '../src/app/images/music-notes-treple-clef.svg';
     const treplePromise = new Promise(resolve => {
       this.trepleClefImg.onload = () => resolve();
     });
 
-    this.bassClefImg = new Image();
     // TODO: Put images somewhere else
     this.bassClefImg.src = '../src/app/images/music-notes-bass-clef.svg';
     const bassPromise = new Promise(resolve => {
       this.bassClefImg.onload = () => resolve();
     });
 
-    this.quarterNoteImg = new Image();
     // TODO: Put images somewhere else
     this.quarterNoteImg.src = '../src/app/images/quarter-note.svg';
     const quaterPromise = new Promise(resolve => {
       this.quarterNoteImg.onload = () => resolve();
     });
 
-    Promise.all([treplePromise, bassPromise, quaterPromise]).then(() => {
-      this.initCanvas(window, musicState);
-    });
+    return Promise.all([treplePromise, bassPromise, quaterPromise]);
   }
 
   private getContext(): CanvasRenderingContext2D {
