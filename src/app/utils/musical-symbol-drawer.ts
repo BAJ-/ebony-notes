@@ -12,7 +12,7 @@ interface Note extends KeyNote {
   tie?: boolean;
 }
 
-export interface SymbolState {
+export interface MusicState {
   trebleClef?: boolean;
   bassClef?: boolean;
   keySignatures?: []
@@ -69,7 +69,7 @@ export class MusicSymbolDrawer {
     }
   }
 
-  constructor(canvas: HTMLCanvasElement, window: Window, symbolState: SymbolState, options?: OptionProps) {
+  constructor(canvas: HTMLCanvasElement, window: Window, musicState: MusicState, options?: OptionProps) {
     this.canvas = canvas;
     this.context = this.getContext();
     this.options = options || { xPadding: this.barWidth / 2, yPadding: 0 };
@@ -97,7 +97,7 @@ export class MusicSymbolDrawer {
     });
 
     Promise.all([treplePromise, bassPromise, quaterPromise]).then(() => {
-      this.initCanvas(window, symbolState);
+      this.initCanvas(window, musicState);
     });
   }
 
@@ -107,7 +107,7 @@ export class MusicSymbolDrawer {
     return context;
   }
 
-  private initCanvas(window: Window, symbolState: SymbolState) {
+  private initCanvas(window: Window, musicState: MusicState) {
     const ratio = this.getPixelRatio(window);
     const width = parseInt(getComputedStyle(this.canvas).getPropertyValue('width').slice(0, -2));
     const height = parseInt(getComputedStyle(this.canvas).getPropertyValue('height').slice(0, -2));
@@ -116,7 +116,7 @@ export class MusicSymbolDrawer {
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
     
-    this.draw(symbolState);
+    this.draw(musicState);
   }
 
   private getPixelRatio(window: Window) {
@@ -124,16 +124,16 @@ export class MusicSymbolDrawer {
     return (window.devicePixelRatio || 1) / backingStore;
   }
 
-  public draw(drawState: SymbolState): void {
-    const symbolState =  Object.assign({ trebleClef: true }, drawState);
+  public draw(drawState: MusicState): void {
+    const musicState =  Object.assign({ trebleClef: true }, drawState);
 
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   
-    this.drawStafs(symbolState);
-    this.drawClefs(symbolState);
-    this.drawKeySignatures(symbolState);
-    this.drawTimesignature(symbolState);
-    this.drawNotes(symbolState);
+    this.drawStafs(musicState);
+    this.drawClefs(musicState);
+    this.drawKeySignatures(musicState);
+    this.drawTimesignature(musicState);
+    this.drawNotes(musicState);
     // this.drawSmallLines();
   }
   
@@ -148,11 +148,11 @@ export class MusicSymbolDrawer {
   //   this.context.strokeStyle = '#000000';
   // }
 
-  private drawStafs(symbolState: SymbolState) {
+  private drawStafs(musicState: MusicState) {
     // Treple Staf
     this.context.beginPath();
     // Set alpha for treple cleff staff and back bar
-    this.context.globalAlpha = symbolState.trebleClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = musicState.trebleClef ? 1 : this.inactiveAlpha;
     // Draw staff
     for (let i = 0; i < this.linesInStaf; i++) {
       this.context.moveTo(this.options.xPadding, this.trepleStafYOffset + i * this.lineSpacing);
@@ -172,7 +172,7 @@ export class MusicSymbolDrawer {
 
     // Back bar between cleffs
     this.context.beginPath();
-    this.context.globalAlpha = symbolState.trebleClef && symbolState.bassClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = musicState.trebleClef && musicState.bassClef ? 1 : this.inactiveAlpha;
     this.context.moveTo(this.options.xPadding, this.trepleStafYOffset + (this.linesInStaf - 1) * this.lineSpacing);
     this.context.lineTo(this.options.xPadding, this.bassStafYOffset);
     this.context.lineWidth = this.barWidth;
@@ -183,7 +183,7 @@ export class MusicSymbolDrawer {
     // Bass Staf
     this.context.beginPath();
     // Set alpha for bass cleff and back bar
-    this.context.globalAlpha = symbolState.bassClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = musicState.bassClef ? 1 : this.inactiveAlpha;
     for (let i = 0; i < this.linesInStaf; i++) {
       this.context.moveTo(this.options.xPadding, this.bassStafYOffset + i * this.lineSpacing);
       this.context.lineTo(this.canvas.width - this.options.xPadding, this.bassStafYOffset + i * this.lineSpacing);
@@ -202,10 +202,10 @@ export class MusicSymbolDrawer {
     
   }
 
-  private drawClefs(symbolState: SymbolState) {
+  private drawClefs(musicState: MusicState) {
     const scale = .8;
 
-    this.context.globalAlpha = symbolState.trebleClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = musicState.trebleClef ? 1 : this.inactiveAlpha;
     this.context.drawImage(
       this.trepleClefImg,
       this.options.xPadding + 16,
@@ -216,7 +216,7 @@ export class MusicSymbolDrawer {
     // Reset alpha
     this.context.globalAlpha = 1;
 
-    this.context.globalAlpha = symbolState.bassClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = musicState.bassClef ? 1 : this.inactiveAlpha;
     this.context.drawImage(
       this.bassClefImg,
       this.options.xPadding + 16,
@@ -228,18 +228,18 @@ export class MusicSymbolDrawer {
     this.context.globalAlpha = 1;
   }
 
-  private drawKeySignatures(symbolState: SymbolState) {
+  private drawKeySignatures(musicState: MusicState) {
     // TODO: Draw key signatures
   }
 
-  private drawTimesignature(symbolState: SymbolState) {
+  private drawTimesignature(musicState: MusicState) {
     // TODO: Draw time signature
   }
 
-  private drawNotes(symbolState: SymbolState) {
-    if (symbolState.notes && symbolState.notes.length > 0) {
-      symbolState.notes.forEach(note => {
-          const notePosition = this.getTrepleCleffNotePosition(note, { baseClef: symbolState.bassClef });
+  private drawNotes(musicState: MusicState) {
+    if (musicState.notes && musicState.notes.length > 0) {
+      musicState.notes.forEach(note => {
+          const notePosition = this.getTrepleCleffNotePosition(note, { baseClef: musicState.bassClef });
           this.context.drawImage(
             this.quarterNoteImg,
             notePosition.x,
