@@ -28,7 +28,7 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, { k
 
   componentDidMount(): void {
     // TODO: Dynamic initial MusicState
-    const initialMusicState: MusicState = { trebleClef: true, bassClef: false };
+    const initialMusicState: MusicState = { trebleClef: true, bassClef: false, notes: [{ "hex": "3C", "note": "C 4" }] };
     ipcRenderer.on('keys-pressed', (_, options) => {
       this.setState({ keysPressed: options.keysPressed });
       this.musicSymbolDrawer?.draw(Object.assign(initialMusicState, { notes: this.state.keysPressed}));
