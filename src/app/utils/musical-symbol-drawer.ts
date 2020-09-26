@@ -121,7 +121,7 @@ export class MusicSymbolDrawer {
     this.draw(musicState);
   }
 
-  private getPixelRatio(window: Window) {
+  private getPixelRatio(window: Window): number {
     const backingStore = this.context.webkitBackingStorePixelRatio || 1;
     return (window.devicePixelRatio || 1) / backingStore;
   }
