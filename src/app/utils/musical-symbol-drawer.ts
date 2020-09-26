@@ -136,19 +136,7 @@ export class MusicSymbolDrawer {
     this.drawKeySignatures(musicState);
     this.drawTimesignature(musicState);
     this.drawNotes(musicState);
-    // this.drawSmallLines();
   }
-  
-  // private drawSmallLines() {
-  //   for (let i = 0; i < 33; i++) {
-  //     this.context.moveTo(this.options.xPadding + 200, i * this.lineSpacing);
-  //     this.context.lineTo(this.options.xPadding + 239, i * this.lineSpacing);
-  //   }
-  //   this.context.lineWidth = this.lineWidth;
-  //   this.context.strokeStyle = '#ff4444';
-  //   this.context.stroke();
-  //   this.context.strokeStyle = '#000000';
-  // }
 
   private drawStafs(musicState: MusicState) {
     // Treple Staf
@@ -241,7 +229,7 @@ export class MusicSymbolDrawer {
   private drawNotes(musicState: MusicState) {
     if (musicState.notes && musicState.notes.length > 0) {
       musicState.notes.forEach(note => {
-          const notePosition = this.getTrepleCleffNotePosition(note, { baseClef: musicState.bassClef });
+          const notePosition = this.getNotePosition(note, { baseClef: musicState.bassClef });
           this.context.drawImage(
             this.quarterNoteImg,
             notePosition.x,
@@ -249,17 +237,54 @@ export class MusicSymbolDrawer {
             this.quarterNoteImg.width,
             this.quarterNoteImg.height
           );
+          this.drawSmallLines(notePosition, { bassClef: musicState.bassClef });
       });
     }
   }
+
+  private toneIsAboveStaf(noteYPosition: number, bassClef = false): boolean {
+    return (bassClef ? this.bassStafYOffset : this.trepleStafYOffset) > noteYPosition;
+  }
+
+  private toneIsBelowStaf(noteYPosition: number, bassClef = false): boolean {
+    return ((bassClef ? this.bassStafYOffset : this.trepleStafYOffset) + (this.linesInStaf - 1) * this.lineSpacing) <= noteYPosition;
+  }
   
+  private drawSmallLine(noteXPosition: number, lineYPosition: number) {
+    this.context.moveTo(noteXPosition - 6, lineYPosition);
+    this.context.lineTo(noteXPosition + 30, lineYPosition);
+  }
+
+  private drawSmallLines(notePosition: { x: number, y: number }, {bassClef = false}) {
+    if (this.toneIsAboveStaf(notePosition.y, bassClef)) {
+      const linesToTopOfNote = ((bassClef ? this.bassStafYOffset : this.trepleStafYOffset) - notePosition.y) / this.lineSpacing;
+      const linesToDraw = linesToTopOfNote === Math.floor(linesToTopOfNote) ? linesToTopOfNote - 1 : Math.floor(linesToTopOfNote);
+      for (let i = 1; i <= linesToDraw; i++) {
+        const lineYPosition = (bassClef ? this.bassStafYOffset : this.trepleStafYOffset) - i * this.lineSpacing;
+        this.drawSmallLine(notePosition.x, lineYPosition);
+      }
+    }
+
+    if (this.toneIsBelowStaf(notePosition.y, bassClef)) {
+      const stafBottomOffset = (bassClef ? this.bassStafYOffset : this.trepleStafYOffset) + (this.linesInStaf - 1) * this.lineSpacing;
+      const linesToBottomOfNote = (notePosition.y - stafBottomOffset) / this.lineSpacing;
+      const linesToDraw = linesToBottomOfNote === Math.ceil(linesToBottomOfNote) ? linesToBottomOfNote : Math.ceil(linesToBottomOfNote);
+      for (let i = 1; i <= linesToDraw; i++) {
+        const lineYPosition = stafBottomOffset + i * this.lineSpacing
+        this.drawSmallLine(notePosition.x, lineYPosition);
+      }
+    }
+    this.context.lineWidth = this.lineWidth;
+    this.context.stroke();
+  }
+
   private assertTone(tone: unknown): asserts tone is Tones {
     if (typeof tone !== 'string' || !Object.keys(this.tones).includes(tone)) {
       throw new Error('Unknown tone');
     }
   }
   // How to determine note position. If I have a note offset that matches the top most note I could just add to that
-  private getTrepleCleffNotePosition(note: Note, { baseClef = false }) {
+  private getNotePosition(note: Note, { baseClef = false }) {
     const [toneRaw, pos] = note.note.split(' ');
     const tone = toneRaw.split('')[0];
     this.assertTone(tone);
