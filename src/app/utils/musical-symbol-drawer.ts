@@ -256,6 +256,7 @@ export class MusicSymbolDrawer {
   }
 
   private drawSmallLines(notePosition: { x: number, y: number }, {bassClef = false}) {
+    this.context.beginPath();
     if (this.toneIsAboveStaf(notePosition.y, bassClef)) {
       const linesToTopOfNote = ((bassClef ? this.bassStafYOffset : this.trepleStafYOffset) - notePosition.y) / this.lineSpacing;
       const linesToDraw = linesToTopOfNote === Math.floor(linesToTopOfNote) ? linesToTopOfNote - 1 : Math.floor(linesToTopOfNote);
@@ -283,7 +284,7 @@ export class MusicSymbolDrawer {
       throw new Error('Unknown tone');
     }
   }
-  // How to determine note position. If I have a note offset that matches the top most note I could just add to that
+
   private getNotePosition(note: Note, { baseClef = false }) {
     const [toneRaw, pos] = note.note.split(' ');
     const tone = toneRaw.split('')[0];
