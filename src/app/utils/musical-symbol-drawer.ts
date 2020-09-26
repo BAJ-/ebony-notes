@@ -265,11 +265,10 @@ export class MusicSymbolDrawer {
     this.assertTone(tone);
     const baseClefToneYOffset = 14 * this.toneSpacing;
     const toneYOffset =
-      this.tones[tone as keyof Tones] *
-      this.toneSpacing +
-      (8 - parseInt(pos)) *
-      this.toneSpacing *
-      7 -
+      // Tone spacing
+      this.tones[tone as keyof Tones] * this.toneSpacing +
+      // Interval spacing
+      (8 - parseInt(pos)) * this.toneSpacing * 7 -
       this.toneSpacing +
       (baseClef ?  baseClefToneYOffset : 0);
     return {
