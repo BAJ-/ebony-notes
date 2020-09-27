@@ -3,7 +3,8 @@ import {
   getDeviceList, on as onUsbEvent, Device as PianoDevice, InEndpoint,
   Interface as PianoInterface
 } from 'usb';
-import { keyNotes, KeyNote } from './data/midi-hex-table';
+import { KeyNote } from './app/utils/interfaces'
+import { keyNotes } from './data/midi-hex-table';
 
 type KeyState = 'pressed' | 'released';
 

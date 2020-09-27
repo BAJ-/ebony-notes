@@ -1,8 +1,8 @@
 import { ipcRenderer } from 'electron';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { KeyNote } from '../../data/midi-hex-table';
-import { MusicSymbolDrawer, MusicState } from '../utils/musical-symbol-drawer';
+import { KeyNote } from '../utils/interfaces';
+import { MusicSymbolDrawer } from '../utils/musical-symbol-drawer';
 
 interface SheetmusciViewProps {
   pianoConnected: boolean;
@@ -28,7 +28,7 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, { k
 
   componentDidMount(): void {
     // TODO: Dynamic initial MusicState
-    const initialMusicState: MusicState = { trebleClef: true, bassClef: false, notes: [{ "hex": "3C", "note": "C 4" }] };
+    const initialMusicState = { trebleClef: true, bassClef: false, notes: [{ "hex": "3C", "note": "C 4" }] };
     ipcRenderer.on('keys-pressed', (_, options) => {
       this.setState({ keysPressed: options.keysPressed });
       this.musicSymbolDrawer?.draw(Object.assign(initialMusicState, { notes: this.state.keysPressed}));

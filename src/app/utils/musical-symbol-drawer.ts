@@ -1,23 +1,8 @@
-import { KeyNote } from "../../data/midi-hex-table";
+import { KeyNote, SheetMusicState } from "./interfaces";
 
 interface OptionProps {
   xPadding: number;
   yPadding: number;
-}
-
-interface Note extends KeyNote {
-  color?: string;
-  value?: 'sixteenth' | 'eighth' | 'quarter' | 'half' | 'whole';
-  dot?: boolean;
-  tie?: boolean;
-}
-
-export interface MusicState {
-  trebleClef?: boolean;
-  bassClef?: boolean;
-  keySignatures?: []
-  timeSignature?: string;
-  notes?: Note[];
 }
 
 interface ExtendedCanvasRenderingContext2D extends CanvasRenderingContext2D {
@@ -69,7 +54,7 @@ export class MusicSymbolDrawer {
     }
   }
 
-  constructor(canvas: HTMLCanvasElement, window: Window, musicState: MusicState, options?: OptionProps) {
+  constructor(canvas: HTMLCanvasElement, window: Window, sheetMusicState: SheetMusicState, options?: OptionProps) {
     this.canvas = canvas;
     this.context = this.getContext();
     this.options = options || { xPadding: this.barWidth / 2, yPadding: 0 };
@@ -78,7 +63,7 @@ export class MusicSymbolDrawer {
     this.trebleClefImg = new Image();
     this.bassClefImg = new Image();
     this.quarterNoteImg = new Image();
-    this.loadImages().then(() => this.initCanvas(window, musicState));
+    this.loadImages().then(() => this.initCanvas(window, sheetMusicState));
   }
 
   private loadImages(): Promise<unknown> {
@@ -109,7 +94,7 @@ export class MusicSymbolDrawer {
     return context;
   }
 
-  private initCanvas(window: Window, musicState: MusicState) {
+  private initCanvas(window: Window, sheetMusicState: SheetMusicState) {
     const ratio = this.getPixelRatio(window);
     const width = parseInt(getComputedStyle(this.canvas).getPropertyValue('width').slice(0, -2));
     const height = parseInt(getComputedStyle(this.canvas).getPropertyValue('height').slice(0, -2));
@@ -118,7 +103,7 @@ export class MusicSymbolDrawer {
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
     
-    this.draw(musicState);
+    this.draw(sheetMusicState);
   }
 
   private getPixelRatio(window: Window): number {
@@ -126,23 +111,21 @@ export class MusicSymbolDrawer {
     return (window.devicePixelRatio || 1) / backingStore;
   }
 
-  public draw(drawState: MusicState): void {
-    const musicState =  Object.assign({ trebleClef: true }, drawState);
+  public draw(drawState: SheetMusicState): void {
+    const sheetMusicState =  Object.assign({ trebleClef: true }, drawState);
 
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   
-    this.drawStafs(musicState);
-    this.drawClefs(musicState);
-    this.drawKeySignatures(musicState);
-    this.drawTimesignature(musicState);
-    this.drawNotes(musicState);
+    this.drawStafs(sheetMusicState);
+    this.drawClefs(sheetMusicState);
+    this.drawNotes(sheetMusicState);
   }
 
-  private drawStafs(musicState: MusicState) {
+  private drawStafs(sheetMusicState: SheetMusicState) {
     // treble Staf
     this.context.beginPath();
     // Set alpha for treble cleff staff and back bar
-    this.context.globalAlpha = musicState.trebleClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = sheetMusicState.trebleClef ? 1 : this.inactiveAlpha;
     // Draw staff
     for (let i = 0; i < this.linesInStaf; i++) {
       this.context.moveTo(this.options.xPadding, this.trebleStafYOffset + i * this.lineSpacing);
@@ -162,7 +145,7 @@ export class MusicSymbolDrawer {
 
     // Back bar between cleffs
     this.context.beginPath();
-    this.context.globalAlpha = musicState.trebleClef && musicState.bassClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = sheetMusicState.trebleClef && sheetMusicState.bassClef ? 1 : this.inactiveAlpha;
     this.context.moveTo(this.options.xPadding, this.trebleStafYOffset + (this.linesInStaf - 1) * this.lineSpacing);
     this.context.lineTo(this.options.xPadding, this.bassStafYOffset);
     this.context.lineWidth = this.barWidth;
@@ -173,7 +156,7 @@ export class MusicSymbolDrawer {
     // Bass Staf
     this.context.beginPath();
     // Set alpha for bass cleff and back bar
-    this.context.globalAlpha = musicState.bassClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = sheetMusicState.bassClef ? 1 : this.inactiveAlpha;
     for (let i = 0; i < this.linesInStaf; i++) {
       this.context.moveTo(this.options.xPadding, this.bassStafYOffset + i * this.lineSpacing);
       this.context.lineTo(this.canvas.width - this.options.xPadding, this.bassStafYOffset + i * this.lineSpacing);
@@ -192,10 +175,10 @@ export class MusicSymbolDrawer {
     
   }
 
-  private drawClefs(musicState: MusicState) {
+  private drawClefs(sheetMusicState: SheetMusicState) {
     const scale = .8;
 
-    this.context.globalAlpha = musicState.trebleClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = sheetMusicState.trebleClef ? 1 : this.inactiveAlpha;
     this.context.drawImage(
       this.trebleClefImg,
       this.options.xPadding + 16,
@@ -206,7 +189,7 @@ export class MusicSymbolDrawer {
     // Reset alpha
     this.context.globalAlpha = 1;
 
-    this.context.globalAlpha = musicState.bassClef ? 1 : this.inactiveAlpha;
+    this.context.globalAlpha = sheetMusicState.bassClef ? 1 : this.inactiveAlpha;
     this.context.drawImage(
       this.bassClefImg,
       this.options.xPadding + 16,
@@ -218,18 +201,10 @@ export class MusicSymbolDrawer {
     this.context.globalAlpha = 1;
   }
 
-  private drawKeySignatures(musicState: MusicState) {
-    // TODO: Draw key signatures
-  }
-
-  private drawTimesignature(musicState: MusicState) {
-    // TODO: Draw time signature
-  }
-
-  private drawNotes(musicState: MusicState) {
-    if (musicState.notes && musicState.notes.length > 0) {
-      musicState.notes.forEach(note => {
-          const notePosition = this.getNotePosition(note, { baseClef: musicState.bassClef });
+  private drawNotes(sheetMusicState: SheetMusicState) {
+    if (sheetMusicState.notes && sheetMusicState.notes.length > 0) {
+      sheetMusicState.notes.forEach(note => {
+          const notePosition = this.getNotePosition(note, { baseClef: sheetMusicState.bassClef });
           this.context.drawImage(
             this.quarterNoteImg,
             notePosition.x,
@@ -237,7 +212,7 @@ export class MusicSymbolDrawer {
             this.quarterNoteImg.width,
             this.quarterNoteImg.height
           );
-          this.drawSmallLines(notePosition, { bassClef: musicState.bassClef });
+          this.drawSmallLines(notePosition, { bassClef: sheetMusicState.bassClef });
       });
     }
   }
@@ -285,7 +260,7 @@ export class MusicSymbolDrawer {
     }
   }
 
-  private getNotePosition(note: Note, { baseClef = false }) {
+  private getNotePosition(note: KeyNote, { baseClef = false }) {
     const [toneRaw, pos] = note.note.split(' ');
     const tone = toneRaw.split('')[0];
     this.assertTone(tone);

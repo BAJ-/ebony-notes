@@ -1,7 +1,7 @@
 import { ipcRenderer } from 'electron';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { KeyNote } from '../../data/midi-hex-table';
+import { KeyNote } from '../utils/interfaces';
 import { MusicSymbolDrawer } from '../utils/musical-symbol-drawer';
 
 interface PlanAndSeeViewProps {

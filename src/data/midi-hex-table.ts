@@ -1,7 +1,4 @@
-export interface KeyNote {
-  hex: string;
-  note: string;
-}
+import { KeyNote } from '../app/utils/interfaces';
 
 export const keyNotes: KeyNote[] = [
   { "hex": "15", "note": "A 0" },
