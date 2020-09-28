@@ -53,13 +53,11 @@ export class PianoConnector {
   }
 
   /**
-   * @description Asserts a KeyNote
+   * @description Guard for KeyNote
    * @param keyNote {unknown}
    */
-  private assertKeyNote(keyNote: unknown): asserts keyNote is KeyNote {
-    if (keyNote == null) {
-      throw new Error('Unable to find keyNote');
-    }
+  private isKeyNote(keyNote: unknown): keyNote is KeyNote {
+    return keyNote != null;
   }
 
   constructor(private appWindow: BrowserWindow = appWindow) {
@@ -137,15 +135,17 @@ export class PianoConnector {
       this.inEndpoint.on('data', data => {
         const midiHex = data.toString('hex').toUpperCase();
         if (midiHex && midiHex !== '0FFE0000') {
-          const keyState: KeyState = this.getKeyState(midiHex);
-          const keyNote: KeyNote = this.getKey(midiHex);
+          const keyState = this.getKeyState(midiHex);
+          const keyNote = this.getKey(midiHex);
           // TODO: Add timestamp to keys for rythm
-          if (keyState === 'pressed') {
-            this.keysPressed = [keyNote, ...this.keysPressed];
-          } else {
-            this.keysPressed = this.keysPressed.filter(key => key.hex !== keyNote.hex);
+          if (this.isKeyNote(keyNote)) {
+            if (keyState === 'pressed') {
+              this.keysPressed = [keyNote, ...this.keysPressed];
+            } else {
+              this.keysPressed = this.keysPressed.filter(key => key.hex !== keyNote.hex);
+            }
+            this.emit('keys-pressed', { keysPressed: this.keysPressed });
           }
-          this.emit('keys-pressed', { keysPressed: this.keysPressed });
         }
       });
     } catch (e) {
@@ -169,11 +169,9 @@ export class PianoConnector {
    * @param midiHex {string} String hex midi data received from a piano
    * @returnType {KeyNote}
    */
-  private getKey(midiHex: string): KeyNote {
+  private getKey(midiHex: string): KeyNote | undefined {
     const noteHex = midiHex.slice(4, 6);
-    const key: KeyNote | undefined = keyNotes.find(keyNote => keyNote.hex === noteHex);
-    this.assertKeyNote(key);
-    return key;
+    return keyNotes.find(keyNote => keyNote.hex === noteHex);
   }
 
   private getVendorMap(): { [key: number]: string } {
