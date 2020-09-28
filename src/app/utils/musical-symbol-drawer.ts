@@ -47,6 +47,8 @@ export class MusicSymbolDrawer {
   protected trebleClefImg: HTMLImageElement;
   protected bassClefImg: HTMLImageElement;
   protected quarterNoteImg: HTMLImageElement;
+  protected quarterNoteSharpImg: HTMLImageElement;
+  protected quarterNoteFlatImg: HTMLImageElement;
 
   private assertContext(context: unknown): asserts context is CanvasRenderingContext2D {
     if (context == null || !(context instanceof CanvasRenderingContext2D)) {
@@ -63,6 +65,8 @@ export class MusicSymbolDrawer {
     this.trebleClefImg = new Image();
     this.bassClefImg = new Image();
     this.quarterNoteImg = new Image();
+    this.quarterNoteSharpImg = new Image();
+    this.quarterNoteFlatImg = new Image();
     this.loadImages().then(() => this.initCanvas(window, sheetMusicState));
   }
 
@@ -85,7 +89,17 @@ export class MusicSymbolDrawer {
       this.quarterNoteImg.onload = () => resolve();
     });
 
-    return Promise.all([treblePromise, bassPromise, quaterPromise]);
+    this.quarterNoteSharpImg.src = '../src/app/images/quarter-note-sharp.svg';
+    const quarterSharpPromise = new Promise(resolve => {
+      this.quarterNoteSharpImg.onload = () => resolve();
+    });
+
+    this.quarterNoteFlatImg.src = '../src/app/images/quarter-note-flat.svg';
+    const quarterFlatPromise = new Promise(resolve => {
+      this.quarterNoteFlatImg.onload = () => resolve();
+    })
+
+    return Promise.all([treblePromise, bassPromise, quaterPromise, quarterSharpPromise, quarterFlatPromise]);
   }
 
   private getContext(): CanvasRenderingContext2D {
@@ -205,12 +219,19 @@ export class MusicSymbolDrawer {
     if (sheetMusicState.notes && sheetMusicState.notes.length > 0) {
       sheetMusicState.notes.forEach(note => {
           const notePosition = this.getNotePosition(note, { baseClef: sheetMusicState.bassClef });
+          const [, accent] = note.note.split('');
+          const noteImage =
+            accent === '#' ?
+            this.quarterNoteSharpImg :
+            accent === 'b' ?
+            this.quarterNoteFlatImg :
+            this.quarterNoteImg;
           this.context.drawImage(
-            this.quarterNoteImg,
+            noteImage,
             notePosition.x,
             notePosition.y,
-            this.quarterNoteImg.width,
-            this.quarterNoteImg.height
+            noteImage.width,
+            noteImage.height
           );
           this.drawSmallLines(notePosition, { bassClef: sheetMusicState.bassClef });
       });
