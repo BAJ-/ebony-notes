@@ -1,2 +1,2 @@
-# piano-sheet-music-practice
-Helps practice reading sheet music aimed at electronic pianos
+# Ebony Notes
+Practice reading sheet music for piano.
