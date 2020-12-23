@@ -1,4 +1,4 @@
-import { KeyNote, SheetMusicState } from "./interfaces";
+import { SheetMusicState } from "./interfaces";
 
 interface OptionProps {
   xPadding: number;
@@ -73,29 +73,29 @@ export class MusicSymbolDrawer {
   private loadImages(): Promise<unknown> {
     // TODO: Put images somewhere else
     this.trebleClefImg.src = '../src/app/images/music-notes-treble-clef.svg';
-    const treblePromise = new Promise(resolve => {
+    const treblePromise = new Promise<void>(resolve => {
       this.trebleClefImg.onload = () => resolve();
     });
 
     // TODO: Put images somewhere else
     this.bassClefImg.src = '../src/app/images/music-notes-bass-clef.svg';
-    const bassPromise = new Promise(resolve => {
+    const bassPromise = new Promise<void>(resolve => {
       this.bassClefImg.onload = () => resolve();
     });
 
     // TODO: Put images somewhere else
     this.quarterNoteImg.src = '../src/app/images/quarter-note.svg';
-    const quaterPromise = new Promise(resolve => {
+    const quaterPromise = new Promise<void>(resolve => {
       this.quarterNoteImg.onload = () => resolve();
     });
 
     this.quarterNoteSharpImg.src = '../src/app/images/quarter-note-sharp.svg';
-    const quarterSharpPromise = new Promise(resolve => {
+    const quarterSharpPromise = new Promise<void>(resolve => {
       this.quarterNoteSharpImg.onload = () => resolve();
     });
 
     this.quarterNoteFlatImg.src = '../src/app/images/quarter-note-flat.svg';
-    const quarterFlatPromise = new Promise(resolve => {
+    const quarterFlatPromise = new Promise<void>(resolve => {
       this.quarterNoteFlatImg.onload = () => resolve();
     })
 
@@ -219,7 +219,7 @@ export class MusicSymbolDrawer {
     if (sheetMusicState.notes && sheetMusicState.notes.length > 0) {
       sheetMusicState.notes.forEach(note => {
           const notePosition = this.getNotePosition(note, { baseClef: sheetMusicState.bassClef });
-          const [, accent] = note.note.split('');
+          const [, accent] = note.split('');
           const noteImage =
             accent === '#' ?
             this.quarterNoteSharpImg :
@@ -281,8 +281,8 @@ export class MusicSymbolDrawer {
     }
   }
 
-  private getNotePosition(note: KeyNote, { baseClef = false }) {
-    const [toneRaw, pos] = note.note.split(' ');
+  private getNotePosition(note: string, { baseClef = false }) {
+    const [toneRaw, pos] = note.split(' ');
     const tone = toneRaw.split('')[0];
     this.assertTone(tone);
     const baseClefToneYOffset = 14 * this.toneSpacing;

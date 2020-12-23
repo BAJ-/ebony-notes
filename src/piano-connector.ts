@@ -1,182 +1,106 @@
-import { BrowserWindow } from 'electron';
 import {
-  getDeviceList, on as onUsbEvent, Device as PianoDevice, InEndpoint,
-  Interface as PianoInterface
+  getDeviceList, on as onUsbEvent, Device as PianoDevice, InEndpoint
 } from 'usb';
-import { KeyNote } from './app/utils/interfaces'
-import { keyNotes } from './data/midi-hex-table';
-
-type KeyState = 'pressed' | 'released';
+import { BrowserWindow } from 'electron';
+import { getKeyFromHex } from './app/utils/tones';
 
 export class PianoConnector {
-  private keysPressed: KeyNote[] = [];
+  private keysPressed: string[] = [];
   private piano: PianoDevice | undefined;
-  private pianoInterface: PianoInterface | undefined;
-  private inEndpoint: InEndpoint | undefined;
-
-  /**
-   * @description Asserts a PianoDevice
-   * @param piano {unknown}
-   */
-  private assertPiano(piano: unknown): asserts piano is PianoDevice {
-    if (!(piano instanceof PianoDevice)) {
-      throw new Error('Piano is not a valid usb.Device');
-    }
-  }
-
-  /**
-   * @description Asserts a PianoInterface
-   * @param pianoInterface {unknown}
-   */
-  private assertPianoInterface(pianoInterface: unknown): asserts pianoInterface is PianoInterface {
-    if (pianoInterface == null) {
-      throw new Error('Invalid piano Interface');
-    }
-  }
+  private vendorMap: number[] = [
+    1177 // Yamaha Piano
+  ];
 
   /**
    * @description Asserts a device InEndpoint
    * @param endpoint {unknown}
    */
-  private assertInEndpoint(endpoint: unknown): asserts endpoint is InEndpoint {
+  private assertInEndpoint (endpoint: unknown): asserts endpoint is InEndpoint {
     if (!(endpoint instanceof InEndpoint)) {
       throw new Error('Endpoint is not a valid InEndpoint');
     }
   }
 
   /**
-   * @description Guard for InEndpoint
-   * @param endpoint {unknown}
+   * @description Returns the vendor ID of the specific device
+   * @param device {PianoDevice}
    */
-  private inEndpointGuard(endpoint: unknown): endpoint is InEndpoint {
-    return endpoint instanceof InEndpoint;
+  private getVendorId = (device: PianoDevice): number | undefined => {
+    return device && device.deviceDescriptor && device.deviceDescriptor.idVendor;
   }
 
-  /**
-   * @description Guard for KeyNote
-   * @param keyNote {unknown}
-   */
-  private isKeyNote(keyNote: unknown): keyNote is KeyNote {
-    return keyNote != null;
-  }
-
-  constructor(private appWindow: BrowserWindow = appWindow) {
-    this.findAndConnectToPiano();
-  }
-
-  /**
-   * @description Looks for a piano to connect to
-   */
-  private findAndConnectToPiano() {
-    if (this.canConnectToAPiano()) {
-      this.assertPiano(this.piano);
-      this.emit('piano-connection', { pianoConnected: true, vendor: this.getVendorMap()[this.piano.deviceDescriptor.idVendor] });
-    }
-
-    onUsbEvent('attach', () => {
-      if (this.canConnectToAPiano()) {
-        this.assertPiano(this.piano);
-        this.emit('piano-connection', { pianoConnected: true, vendor: this.getVendorMap()[this.piano.deviceDescriptor.idVendor] });
-      }
-    });
-
+  constructor (private appWindow: BrowserWindow = appWindow) {
+    this.findPiano();
+    onUsbEvent('attach', this.findPiano)
     onUsbEvent('detach', device => {
-      if (this.piano && this.piano.deviceDescriptor.idVendor && this.piano.deviceDescriptor.idVendor === device.deviceDescriptor.idVendor) {
+      if (this.getVendorId(this.piano) === this.getVendorId(device)) {
         this.piano = undefined;
-        this.inEndpoint = undefined;
-        this.pianoInterface = undefined;
+        this.keysPressed = [];
         this.emit('piano-connection', { pianoConnected: false });
       }
-    });
+    })
   }
 
   /**
-   * @description Determines if there is a piano to connect to by:
-   * 1. Looking for a piano
-   * 2. If a piano is found, starts the connection attempt
-   * @returnType {boolean}
+   * @description Looks for a piano among connected devices
+   * @returnType {PianoDevice|undefined}
    */
-  private canConnectToAPiano(): boolean {
-    this.piano = this.findPiano();
-    if (this.piano !== undefined) {
-      try {
-        this.connectToPiano(this.piano);
-        return true;
-      } catch (e) {
-        this.emit('error', e.message);
-      }
+  private findPiano = () => {
+    const piano = getDeviceList().find(device => this.vendorMap.includes(this.getVendorId(device)));
+    if (piano) {
+      this.connectToPiano(piano);
     }
-    return false;
   }
 
   /**
    * @description Attempts to connect to a given piano
    * @param piano {PianoDevice} Device recognized as a Piano
    */
-  private connectToPiano(piano: PianoDevice) {
+  private connectToPiano = (piano: PianoDevice) => {
     try {
       piano.open();
-
-      this.pianoInterface = piano.interfaces.find(pianoInterface => {
+      const pianoInterface = piano.interfaces.find(pianoInterface => {
         // Looking for an interface with endpoints to listen too
-        return pianoInterface.endpoints.length !== 0;
+        return pianoInterface.endpoints.length > 0;
       });
-      this.assertPianoInterface(this.pianoInterface);
-      this.pianoInterface.claim();
-
-      this.inEndpoint = this.pianoInterface.endpoints.find(this.inEndpointGuard);
-      this.assertInEndpoint(this.inEndpoint);
-
-      this.inEndpoint.startPoll();
-      this.inEndpoint.on('error', () => {
-        // TODO: Do something
+      pianoInterface.claim();
+      const inEndpoint = pianoInterface.endpoints.find(endpoint => endpoint.direction === "in");
+      this.assertInEndpoint(inEndpoint);
+      inEndpoint.startPoll();
+      inEndpoint.on('data', this.processPianoData);
+      inEndpoint.on('error', (e) => {
+        throw new Error(`Endpoint error ${e.message}`)
       });
-
-      this.inEndpoint.on('data', data => {
-        const midiHex = data.toString('hex').toUpperCase();
-        if (midiHex && midiHex !== '0FFE0000') {
-          const keyState = this.getKeyState(midiHex);
-          const keyNote = this.getKey(midiHex);
-          // TODO: Add timestamp to keys for rythm
-          if (this.isKeyNote(keyNote)) {
-            if (keyState === 'pressed') {
-              this.keysPressed = [keyNote, ...this.keysPressed];
-            } else {
-              this.keysPressed = this.keysPressed.filter(key => key.hex !== keyNote.hex);
-            }
-            this.emit('keys-pressed', { keysPressed: this.keysPressed });
-          }
-        }
-      });
+      this.piano = piano;
+      this.emit('piano-connection', { pianoConnected: true });
     } catch (e) {
       throw new Error(`Unable to connecto to piano: ${e.message}`);
     }
   }
 
-  /**
-   * @description Returns the given key state. In case we don't have a pressed key, we assume it's released.
-   * @param midiHex {string} String hex midi data received from a piano
-   * @returnType {KeyState}
-   */
-  private getKeyState(midiHex: string): KeyState {
-    return midiHex.slice(0,4) === '0990'
-      ? 'pressed'
-      : 'released';
+  private keyIsPressed = (midiHex: string) => {
+    return midiHex.slice(0,4) === '0990';
+  }
+  
+  private keyIsReleased = (midiHex: string) => {
+    return midiHex.slice(0, 4) === '0880';
   }
 
-  /**
-   * @description Finds a KeyNote based on the provided midiHex string
-   * @param midiHex {string} String hex midi data received from a piano
-   * @returnType {KeyNote}
-   */
-  private getKey(midiHex: string): KeyNote | undefined {
-    const noteHex = midiHex.slice(4, 6);
-    return keyNotes.find(keyNote => keyNote.hex === noteHex);
-  }
-
-  private getVendorMap(): { [key: number]: string } {
-    return {
-      1177: "Yamaha Piano"
+  private processPianoData = (data) => {
+    try {
+      const midiHex = data.toString('hex').toUpperCase();
+      if (midiHex && midiHex !== '0FFE0000') {
+        const hexTone = midiHex.slice(4, 6);
+        if (this.keyIsPressed(midiHex)) {
+          this.keysPressed = [getKeyFromHex(hexTone), ...this.keysPressed];
+        }
+        if (this.keyIsReleased(midiHex)) {
+          this.keysPressed = this.keysPressed.filter(key => key !== getKeyFromHex(hexTone));
+        }
+        this.emit('keys-pressed', { keysPressed: this.keysPressed });
+      }
+    } catch (e) {
+      throw new Error(`Data processing error: ${e.message}`);
     }
   }
 
@@ -185,15 +109,7 @@ export class PianoConnector {
    * @param channel {string} Channel to emit payload on
    * @param payload {Record<string, unknown>} Optional payload send to frontend
    */
-  private emit(channel: string, payload?: Record<string, unknown>) {
+  private emit = (channel: string, payload?: Record<string, unknown>) => {
     this.appWindow.webContents.send(channel, payload);
-  }
-
-  /**
-   * @description Looks for a piano among connected devices
-   * @returnType {PianoDevice|undefined}
-   */
-  private findPiano(): PianoDevice | undefined {
-    return getDeviceList().find(device => this.getVendorMap()[device.deviceDescriptor.idVendor] !== undefined);
   }
 }

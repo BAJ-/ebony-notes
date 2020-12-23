@@ -1,14 +1,13 @@
 import { ipcRenderer } from 'electron';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { KeyNote } from '../utils/interfaces';
 import { MusicSymbolDrawer } from '../utils/musical-symbol-drawer';
 
 interface PlanAndSeeViewProps {
   pianoConnected: boolean;
 }
 interface PlanAndSeeViewState {
-  keysPressed: KeyNote[];
+  keysPressed: string[];
   bassClef: boolean;
   trebleClef: boolean;
 }
@@ -101,7 +100,7 @@ export class PlayAndSeeView extends React.PureComponent<PlanAndSeeViewProps, Pla
           </div>
           <div className={this.props.pianoConnected ? '' : '' /*'pointer-events-none opacity-50'*/}>
             <canvas ref={this.setCanvasRef} width={800} height={500} className="border"/>
-            <h1>Key pressed: {this.state.keysPressed.map(k => k.note).join(', ')}</h1>
+            <h1>Key pressed: {this.state.keysPressed.join(', ')}</h1>
           </div>
       </div>
     );

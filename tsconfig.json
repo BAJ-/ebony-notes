@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "jsx": "react",
-    "strict": true,
+    "strict": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,

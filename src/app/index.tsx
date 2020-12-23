@@ -17,7 +17,6 @@ class App extends React.PureComponent<Record<string, unknown>, { pianoConnected:
 
   componentDidMount() {
     ipcRenderer.on('piano-connection', (_, options) => {
-      console.log(`piano connection: ${options.pianoConnected}`)
       this.setState({ pianoConnected: options.pianoConnected });
     });
   }
