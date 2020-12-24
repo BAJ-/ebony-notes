@@ -1,7 +1,7 @@
 import { ipcRenderer } from 'electron';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { MusicSymbolDrawer } from '../utils/musical-symbol-drawer';
+import { MusicSymbolDrawer } from '../utils/sheet-music-drawer';
 
 interface PlanAndSeeViewProps {
   pianoConnected: boolean;

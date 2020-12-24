@@ -2,7 +2,7 @@ import { ipcRenderer } from 'electron';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 import { isEmpty, isEqual, xorWith } from 'lodash';
-import { MusicSymbolDrawer } from '../utils/musical-symbol-drawer';
+import { MusicSymbolDrawer } from '../utils/sheet-music-drawer';
 import { getRandomKey } from '../utils/tones';
 
 interface SheetmusciViewProps {
