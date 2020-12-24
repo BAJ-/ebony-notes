@@ -25,20 +25,27 @@ export class PianoConnector {
    * @description Returns the vendor ID of the specific device
    * @param device {PianoDevice}
    */
-  private getVendorId = (device: PianoDevice): number | undefined => {
-    return device && device.deviceDescriptor && device.deviceDescriptor.idVendor;
+  private getVendorId = (device: PianoDevice): number => {
+    return (device && device.deviceDescriptor && device.deviceDescriptor.idVendor) || 0;
   }
 
   constructor (private appWindow: BrowserWindow = appWindow) {
     this.findPiano();
     onUsbEvent('attach', this.findPiano)
     onUsbEvent('detach', device => {
-      if (this.getVendorId(this.piano) === this.getVendorId(device)) {
-        this.piano = undefined;
-        this.keysPressed = [];
-        this.emit('piano-connection', { pianoConnected: false });
+      if (this.piano && this.getVendorId(this.piano) === this.getVendorId(device)) {
+        this.disconnectPiano();
       }
     })
+  }
+
+  /**
+   * @description Resets piano data references. To be used when piano connection is lost.
+   */
+  private disconnectPiano () {
+    this.piano = undefined;
+    this.keysPressed = [];
+    this.emit('piano-connection', { pianoConnected: false });
   }
 
   /**
@@ -68,9 +75,7 @@ export class PianoConnector {
       this.assertInEndpoint(inEndpoint);
       inEndpoint.startPoll();
       inEndpoint.on('data', this.processPianoData);
-      inEndpoint.on('error', (e) => {
-        throw new Error(`Endpoint error ${e.message}`)
-      });
+      inEndpoint.on('error', this.disconnectPiano);
       this.piano = piano;
       this.emit('piano-connection', { pianoConnected: true });
     } catch (e) {
