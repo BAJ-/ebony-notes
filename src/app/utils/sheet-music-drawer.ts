@@ -1,5 +1,8 @@
-import { SheetMusicState } from "./interfaces";
-
+interface SheetMusicState {
+  trebleClef?: boolean;
+  bassClef?: boolean;
+  notes?: string[];
+}
 interface OptionProps {
   xPadding: number;
   yPadding: number;
