@@ -17,7 +17,9 @@ export class Routes extends React.PureComponent<RoutesProps, unknown> {
     const { pianoConnected } = this.props;
     return (
       <>
-        <Route path="/" exact component={IndexView} />
+        <Route path="/" exact>
+          <IndexView />
+        </Route>
         <Route path="/sheetmusic-practice" exact>
           <SheetmusicView pianoConnected={pianoConnected} />
         </Route>

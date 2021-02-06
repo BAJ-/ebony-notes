@@ -79,7 +79,7 @@ export class PianoConnector {
       this.piano = piano;
       this.emit('piano-connection', { pianoConnected: true });
     } catch (e) {
-      throw new Error(`Unable to connecto to piano: ${e.message}`);
+      throw new Error(`Unable to connect to piano: ${e.message}`);
     }
   }
 
@@ -100,7 +100,9 @@ export class PianoConnector {
           this.keysPressed = [getKeyFromHex(hexTone), ...this.keysPressed];
         }
         if (this.keyIsReleased(midiHex)) {
-          this.keysPressed = this.keysPressed.filter(key => key !== getKeyFromHex(hexTone));
+          const keyReleased = getKeyFromHex(hexTone);
+          this.keysPressed = this.keysPressed.filter(key => key !== keyReleased);
+          this.emit('key-released', { keyReleased: keyReleased });
         }
         this.emit('keys-pressed', { keysPressed: this.keysPressed });
       }

@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/BAJ-/piano-sheet-music-practice#readme",
   "devDependencies": {
+    "@tailwindcss/custom-forms": "^0.2.1",
     "@types/lodash": "^4.14.161",
     "@types/react": "^16.9.48",
     "@types/react-dom": "^16.9.8",

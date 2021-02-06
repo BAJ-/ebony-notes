@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 
-export class IndexView extends React.PureComponent<Record<string, unknown>, unknown> {
-  constructor(props: Record<string, unknown>) {
+export class IndexView extends React.PureComponent<unknown, unknown> {
+  constructor(props: unknown) {
     super(props);
   }
 
