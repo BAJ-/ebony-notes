@@ -1,4 +1,6 @@
 import { flatten, times, constant } from 'lodash';
+import { Note } from "./sheet-music-drawer";
+import { KeyRanges } from '../components/sheetmusic-view';
 
 const tones = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
 const tonesInOctave = tones.length;
@@ -36,12 +38,25 @@ function getKeyFromIndex (keyIndex: number): string {
   return getKeyFromHex(toneHex);
 }
 
-export function getRandomKey (bottomKey: string, topKey: string): string {
+// START is topKey, END is bottomKey
+export function getRandomKey (keyRanges: KeyRanges, trebleClef: boolean, bassClef: boolean): Note {
+  let clef;
+  if (trebleClef && bassClef) {
+    clef = getRandomClef()
+  } else {
+    clef = trebleClef ? 'treble' : 'bass';
+  }
   // We add 1 for it to be inclusive
-  const bottomKeyIndex = getIndexFromKey(bottomKey) + 1;
-  const topKeyIndex = getIndexFromKey(topKey);
+  const bottomKeyIndex = getIndexFromKey(keyRanges[clef].end) + 1;
+  const topKeyIndex = getIndexFromKey(keyRanges[clef].start);
   const keyIndex = Math.floor(Math.random() * (topKeyIndex - bottomKeyIndex) + bottomKeyIndex);
-  return getKeyFromIndex(keyIndex);
+  const key = getKeyFromIndex(keyIndex);
+  return { key, clef };
+}
+
+export function getRandomClef (): string {
+  const clefs = ['treble', 'bass'];
+  return clefs[Math.floor(Math.random() * clefs.length)];
 }
 
 export function getScale (key: string, kind: string, octaves = 1): string[] {

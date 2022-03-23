@@ -1,7 +1,12 @@
+export interface Note {
+  key: string;
+  clef: string;
+}
+
 interface SheetMusicState {
   trebleClef?: boolean;
   bassClef?: boolean;
-  notes?: string[];
+  notes?: Note[];
 }
 interface OptionProps {
   xPadding: number;
@@ -221,8 +226,8 @@ export class MusicSymbolDrawer {
   private drawNotes(sheetMusicState: SheetMusicState) {
     if (sheetMusicState.notes && sheetMusicState.notes.length > 0) {
       sheetMusicState.notes.forEach(note => {
-          const notePosition = this.getNotePosition(note, { baseClef: sheetMusicState.bassClef });
-          const [, accent] = note.split('');
+          const notePosition = this.getNotePosition(note);
+          const [, accent] = note.key.split('');
           const noteImage =
             accent === '#' ?
             this.quarterNoteSharpImg :
@@ -236,17 +241,17 @@ export class MusicSymbolDrawer {
             noteImage.width,
             noteImage.height
           );
-          this.drawSmallLines(notePosition, { bassClef: sheetMusicState.bassClef });
+          this.drawSmallLines(notePosition, note.clef);
       });
     }
   }
 
-  private toneIsAboveStaf(noteYPosition: number, bassClef = false): boolean {
-    return (bassClef ? this.bassStafYOffset : this.trebleStafYOffset) > noteYPosition;
+  private toneIsAboveStaf(noteYPosition: number, clef: string): boolean {
+    return (clef === 'bass' ? this.bassStafYOffset : this.trebleStafYOffset) > noteYPosition;
   }
 
-  private toneIsBelowStaf(noteYPosition: number, bassClef = false): boolean {
-    return ((bassClef ? this.bassStafYOffset : this.trebleStafYOffset) + (this.linesInStaf - 1) * this.lineSpacing) <= noteYPosition;
+  private toneIsBelowStaf(noteYPosition: number, clef): boolean {
+    return ((clef === 'bass' ? this.bassStafYOffset : this.trebleStafYOffset) + (this.linesInStaf - 1) * this.lineSpacing) <= noteYPosition;
   }
   
   private drawSmallLine(noteXPosition: number, lineYPosition: number) {
@@ -254,19 +259,19 @@ export class MusicSymbolDrawer {
     this.context.lineTo(noteXPosition + 30, lineYPosition);
   }
 
-  private drawSmallLines(notePosition: { x: number, y: number }, {bassClef = false}) {
+  private drawSmallLines(notePosition: { x: number, y: number }, clef: string) {
     this.context.beginPath();
-    if (this.toneIsAboveStaf(notePosition.y, bassClef)) {
-      const linesToTopOfNote = ((bassClef ? this.bassStafYOffset : this.trebleStafYOffset) - notePosition.y) / this.lineSpacing;
+    if (this.toneIsAboveStaf(notePosition.y, clef)) {
+      const linesToTopOfNote = ((clef === 'bass' ? this.bassStafYOffset : this.trebleStafYOffset) - notePosition.y) / this.lineSpacing;
       const linesToDraw = linesToTopOfNote === Math.floor(linesToTopOfNote) ? linesToTopOfNote - 1 : Math.floor(linesToTopOfNote);
       for (let i = 1; i <= linesToDraw; i++) {
-        const lineYPosition = (bassClef ? this.bassStafYOffset : this.trebleStafYOffset) - i * this.lineSpacing;
+        const lineYPosition = (clef === 'bass' ? this.bassStafYOffset : this.trebleStafYOffset) - i * this.lineSpacing;
         this.drawSmallLine(notePosition.x, lineYPosition);
       }
     }
 
-    if (this.toneIsBelowStaf(notePosition.y, bassClef)) {
-      const stafBottomOffset = (bassClef ? this.bassStafYOffset : this.trebleStafYOffset) + (this.linesInStaf - 1) * this.lineSpacing;
+    if (this.toneIsBelowStaf(notePosition.y, clef)) {
+      const stafBottomOffset = (clef === 'bass' ? this.bassStafYOffset : this.trebleStafYOffset) + (this.linesInStaf - 1) * this.lineSpacing;
       const linesToBottomOfNote = (notePosition.y - stafBottomOffset) / this.lineSpacing;
       const linesToDraw = linesToBottomOfNote === Math.ceil(linesToBottomOfNote) ? linesToBottomOfNote : Math.ceil(linesToBottomOfNote);
       for (let i = 1; i <= linesToDraw; i++) {
@@ -284,8 +289,8 @@ export class MusicSymbolDrawer {
     }
   }
 
-  private getNotePosition(note: string, { baseClef = false }) {
-    const [toneRaw, pos] = note.split(' ');
+  private getNotePosition(note: Note) {
+    const [toneRaw, pos] = note.key.split(' ');
     const tone = toneRaw.split('')[0];
     this.assertTone(tone);
     const baseClefToneYOffset = 14 * this.toneSpacing;
@@ -295,7 +300,7 @@ export class MusicSymbolDrawer {
       // Interval spacing
       (8 - parseInt(pos)) * this.toneSpacing * 7 -
       this.toneSpacing +
-      (baseClef ?  baseClefToneYOffset : 0);
+      (note.clef === 'bass' ?  baseClefToneYOffset : 0);
     return {
       x: this.options.xPadding + 205,
       y: toneYOffset
