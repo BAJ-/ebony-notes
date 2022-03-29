@@ -15,7 +15,7 @@ export interface KeyRanges {
   };
 }
 
-interface SheetmusciViewProps {
+interface SheetMusicViewProps {
   pianoConnected: boolean;
 }
 
@@ -29,7 +29,7 @@ interface SheetMusicViewState {
   practicing: boolean;
 }
 
-export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, SheetMusicViewState> {
+export class SheetMusicView extends React.PureComponent<SheetMusicViewProps, SheetMusicViewState> {
   private canvas: HTMLCanvasElement | undefined;
   private musicSymbolDrawer: MusicSymbolDrawer | undefined;
 
@@ -39,7 +39,7 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, She
     }
   }
 
-  constructor(props: SheetmusciViewProps) {
+  constructor(props: SheetMusicViewProps) {
     super(props);
 
     this.state = {
