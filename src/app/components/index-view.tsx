@@ -11,8 +11,10 @@ export class IndexView extends React.PureComponent<unknown, unknown> {
       <div className="p-16">
         <div className="flex justify-between">
           <Link to="/sheetmusic-practice" className="h-64 w-2/5 rounded overflow-hidden shadow-lg" title="Sheetmusic">
+            Practice
           </Link>
           <Link to="/play-and-see" className="h-64 w-2/5 rounded overflow-hidden shadow-lg" title="Play and see">
+            Play and see
           </Link>
         </div>
       </div>

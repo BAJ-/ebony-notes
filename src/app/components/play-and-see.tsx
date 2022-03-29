@@ -37,7 +37,12 @@ export class PlayAndSeeView extends React.PureComponent<PlanAndSeeViewProps, Pla
       this.musicSymbolDrawer?.draw({
         bassClef: this.state.bassClef,
         trebleClef: this.state.trebleClef,
-        notes: this.state.keysPressed
+        notes: this.state.keysPressed.map((key) => {
+          return {
+            key: key,
+            clef: this.state.trebleClef ? "treble" : "bass",
+          };
+        }),
       });
     });
 
@@ -56,7 +61,12 @@ export class PlayAndSeeView extends React.PureComponent<PlanAndSeeViewProps, Pla
     this.musicSymbolDrawer?.draw({
       trebleClef: this.state.trebleClef,
       bassClef: this.state.bassClef,
-      notes: this.state.keysPressed
+      notes: this.state.keysPressed.map((key) => {
+        return {
+          key: key,
+          clef: this.state.trebleClef ? "treble" : "bass",
+        };
+      }),
     });
   }
 

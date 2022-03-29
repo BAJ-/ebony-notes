@@ -1,8 +1,19 @@
 import { ipcRenderer } from 'electron';
 import * as React from 'react';
-import { isEmpty, isEqual, xorWith, first, includes } from 'lodash';
-import { MusicSymbolDrawer } from '../utils/sheet-music-drawer';
+import { isEmpty, first, find, cloneDeep, includes } from 'lodash';
+import { MusicSymbolDrawer, Note } from '../utils/sheet-music-drawer';
 import { getRandomKey } from '../utils/tones';
+
+export interface KeyRanges {
+  treble: {
+    start: string;
+    end: string;
+  };
+  bass: {
+    start: string;
+    end: string;
+  };
+}
 
 interface SheetmusciViewProps {
   pianoConnected: boolean;
@@ -11,9 +22,8 @@ interface SheetmusciViewProps {
 interface SheetMusicViewState {
   keysPressed: string[];
   correctKeysPressed: boolean;
-  startKey: string;
-  endKey: string;
-  practiceKeys: string[];
+  keyRanges: KeyRanges;
+  practiceKeys: Note[];
   trebleClef: boolean;
   bassClef: boolean;
   practicing: boolean;
@@ -35,8 +45,16 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, She
     this.state = {
       keysPressed: [],
       correctKeysPressed: false,
-      startKey: 'C 4',
-      endKey: 'C 6',
+      keyRanges: {
+        treble: {
+          start: 'C 4',
+          end: 'C 5',
+        },
+        bass: {
+          start: 'C 3',
+          end: 'C 4',
+        },
+      },
       practiceKeys: [],
       trebleClef: true,
       bassClef: false,
@@ -46,38 +64,49 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, She
 
   componentDidMount(): void {
     ipcRenderer.on('keys-pressed', (_, options) => {
-      const { startKey, endKey, practicing, practiceKeys, correctKeysPressed } = this.state;
-      let updatedStartKey = startKey;
-      let updatedEndKey = endKey;
-      let updatedCorrectKeysPressed = correctKeysPressed;
+      const {
+        keyRanges, practicing, practiceKeys, correctKeysPressed
+      } = this.state;
 
-      if (!startKey || !endKey) {
-         if (!startKey) {
-           updatedStartKey = first(options.keysPressed);
-         } else if (!endKey) {
-           updatedEndKey = first(options.keysPressed);
+      const keyRangesSet = keyRanges.treble.start && keyRanges.treble.end && keyRanges.bass.start && keyRanges.bass.end;
+      let updatedCorrectKeysPressed = correctKeysPressed;
+      const updatedKeyRanges = cloneDeep(keyRanges);
+
+      if (!keyRangesSet) {
+         if (!keyRanges.treble.start) {
+           updatedKeyRanges.treble.start = first(options.keysPressed);
+         } else if (!keyRanges.treble.end) {
+           updatedKeyRanges.treble.end = first(options.keysPressed);
+         } else if (!keyRanges.bass.start) {
+            updatedKeyRanges.bass.start = first(options.keysPressed);
+         } else if (!keyRanges.bass.end) {
+           updatedKeyRanges.bass.end = first(options.keysPressed);
          }
-      } else if (isEmpty(xorWith(practiceKeys, options.keysPressed, isEqual)) && practicing && !correctKeysPressed) {
-        updatedCorrectKeysPressed = true;
+      } else if (practicing && !correctKeysPressed) {
+        const keyMatch = find(practiceKeys, (note: Note) => includes(options.keysPressed, note.key));
+        updatedCorrectKeysPressed = keyMatch != null;
       }
       this.setState({
         correctKeysPressed: updatedCorrectKeysPressed,
-        startKey: updatedStartKey,
-        endKey: updatedEndKey,
+        keyRanges: updatedKeyRanges,
         keysPressed: options.keysPressed
       });
     });
     
     ipcRenderer.on('key-released', (_, options) => {
-      const { startKey, endKey, practicing, correctKeysPressed, practiceKeys, trebleClef, bassClef } = this.state;
+      const {
+        keyRanges, practicing, correctKeysPressed, practiceKeys, trebleClef, bassClef
+      } = this.state;
 
-      if (startKey && endKey && practicing && correctKeysPressed) {
-        const updatedPracticeKeys = practiceKeys.filter(key => key !== options.keyReleased);
+      const rangeKeysSet = keyRanges.treble.start && keyRanges.treble.end && keyRanges.bass.start && keyRanges.bass.end;
+
+      if (rangeKeysSet && practicing && correctKeysPressed) {
+        const updatedPracticeKeys = practiceKeys.filter(note => note.key !== options.keyReleased);
 
         if (isEmpty(updatedPracticeKeys)) {
-          const newPracticeKey = (function getNewParcticeKey () {
-            const randomKey = getRandomKey(endKey, startKey);
-            return includes(practiceKeys, randomKey) ? getNewParcticeKey() : randomKey;
+          const newPracticeKey: Note = (function getNewPracticeKey () {
+            const randomKey = getRandomKey(keyRanges, trebleClef, bassClef);
+            return find(practiceKeys, (k) => k.key === randomKey.key && k.clef === randomKey.clef) ? getNewPracticeKey() : randomKey;
           })();
           this.setState({
             practiceKeys: [newPracticeKey],
@@ -109,7 +138,7 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, She
   }
 
   private togglePractice = () => {
-    const { practicing, trebleClef, bassClef, startKey, endKey } = this.state;
+    const { practicing, trebleClef, bassClef, keyRanges } = this.state;
 
     if (practicing) {
       this.musicSymbolDrawer?.draw({
@@ -120,7 +149,7 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, She
 
       this.setState({ practicing: false });
     } else {
-      const randomNotes = [getRandomKey(endKey, startKey)];
+      const randomNotes = [getRandomKey(keyRanges, trebleClef, bassClef)];
 
       this.musicSymbolDrawer?.draw({
         trebleClef: trebleClef,
@@ -135,8 +164,14 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, She
     }
   }
 
-  private pickRange = () => {
-    this.setState({ startKey: undefined, endKey: undefined });
+  private pickTrebleRange = () => {
+    const keyRanges = Object.assign({}, this.state.keyRanges, { treble: { start: undefined, end: undefined } });
+    this.setState({ keyRanges: keyRanges });
+  }
+
+  private pickBassRange = () => {
+    const keyRanges = Object.assign({}, this.state.keyRanges, { bass: { start: undefined, end: undefined } });
+    this.setState({ keyRanges: keyRanges });
   }
 
   private setCanvasRef = (canvas: HTMLCanvasElement) => {
@@ -161,7 +196,7 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, She
   }
 
   public render(): JSX.Element {
-    const { startKey, endKey, practicing, keysPressed, trebleClef, bassClef, correctKeysPressed } = this.state;
+    const { keyRanges, practicing, keysPressed, trebleClef, bassClef, correctKeysPressed } = this.state;
     return (
       <div className="flex">
         <div className="flex-initial w-3/12 mr-10 border-r-2 border-gray-200">
@@ -177,9 +212,15 @@ export class SheetmusicView extends React.PureComponent<SheetmusciViewProps, She
           </div>
           <div className="grid grid-cols-3 gap-4">
             <span>
-              <span className={!startKey ? 'rounded-sm border-yellow-600' : ''}>{startKey || '?'}</span>:<span className={startKey && !endKey ? 'rounded-sm border-yellow-600' : ''}>{endKey || '?'}</span>
+              <span className={!keyRanges.treble.start ? 'rounded-sm border-yellow-600' : ''}>{keyRanges.treble.start || '?'}</span>:<span className={keyRanges.treble.start && !keyRanges.treble.end ? 'rounded-sm border-yellow-600' : ''}>{keyRanges.treble.end || '?'}</span>
             </span>
-            <button className="bg-transparent hover:bg-yellow-100 text-yellow-600" onClick={this.pickRange}>Range</button>
+            <button className="bg-transparent hover:bg-yellow-100 text-yellow-600" onClick={this.pickTrebleRange}><span className="text-5xl align-middle">𝄞</span> range</button>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <span>
+              <span className={!keyRanges.bass.start ? 'rounded-sm border-yellow-600' : ''}>{keyRanges.bass.start || '?'}</span>:<span className={keyRanges.bass.start && !keyRanges.bass.end ? 'rounded-sm border-yellow-600' : ''}>{keyRanges.bass.end || '?'}</span>
+            </span>
+            <button className="bg-transparent hover:bg-yellow-100 text-yellow-600" onClick={this.pickBassRange}><span className="text-5xl align-middle">𝄢</span> range</button>
           </div>
         </div>
         <div>
