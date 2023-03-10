@@ -1,12 +1,14 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { HashRouter } from 'react-router-dom';
-import { Container } from './components/container';
-import { ipcRenderer } from 'electron';
+//import { ipcRenderer } from 'electron';
+import { Conductor } from './controllers/conductor';
 
 import './styles.css';
 
 class App extends React.PureComponent<Record<string, unknown>, { pianoConnected: boolean }> {
+  private fgCanvas: HTMLCanvasElement | undefined;
+  private bgCanvas: HTMLCanvasElement | undefined;
+
   constructor(props: Record<string, unknown>) {
     super(props);
 
@@ -15,17 +17,27 @@ class App extends React.PureComponent<Record<string, unknown>, { pianoConnected:
     }
   }
 
+  private setFgCanvasRef = (canvas: HTMLCanvasElement) => {
+    this.fgCanvas = canvas;
+  }
+
+  private setBgCanvasRef = (canvas: HTMLCanvasElement) => {
+    this.bgCanvas = canvas;
+  }
+
   componentDidMount() {
-    ipcRenderer.on('piano-connection', (_, options) => {
-      this.setState({ pianoConnected: options.pianoConnected });
-    });
+    new Conductor(window, this.fgCanvas, this.bgCanvas);
+    //ipcRenderer.on('piano-connection', (_, options) => {
+    //  this.setState({ pianoConnected: options.pianoConnected });
+    //});
   }
 
   render(): JSX.Element {
     return (
-      <HashRouter>
-        <Container pianoConnected={this.state.pianoConnected} />
-      </HashRouter>
+      <>
+        <canvas ref={this.setFgCanvasRef} width="1200" height="800" style={{position:"absolute"}} />
+        <canvas ref={this.setBgCanvasRef} width="1200" height="800" style={{position:"absolute"}} />
+      </>
     );
   }
 }

@@ -1,0 +1,130 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { MusicSymbolDrawer, SheetMusicState } from "./sheet-music-drawer";
+
+describe("MusicSymbolDrawer", () => {
+  const contextDrawImageMock = jest.fn();
+  // @ts-ignore
+  const mockCanvas: HTMLCanvasElement = {
+    width: 100,
+    height: 100,
+    // @ts-ignore
+    style: {
+      width: "100px",
+      height: "100px",
+    },
+    // @ts-ignore
+    getContext: () => {
+      return {
+        // @ts-ignore
+        clearRect: () => null,
+        // @ts-ignore
+        drawImage: contextDrawImageMock,
+      };
+    },
+  };
+  const sheetMusicStateMock: SheetMusicState = {};
+  let getContextMock;
+  let imagePromise;
+  let loadImagesMock;
+  let initCanvasMock;
+  let drawStafsMock;
+  let drawClefsMock;
+  let getPixelRatioMock;
+  let getComputedStyleMock;
+  let getNotePositionMock;
+  let drawSmallLinesMock;
+  let drawNotesMock;
+
+  beforeAll(() => {
+    getContextMock = jest.spyOn(
+      MusicSymbolDrawer.prototype as any,
+      "getContext"
+    );
+    imagePromise = Promise.resolve();
+    loadImagesMock = jest
+      .spyOn(MusicSymbolDrawer.prototype as any, "loadImages")
+      .mockImplementation(() => imagePromise);
+
+    initCanvasMock = jest.spyOn(
+      MusicSymbolDrawer.prototype as any,
+      "initCanvas"
+    );
+
+    getPixelRatioMock = jest
+      .spyOn(MusicSymbolDrawer.prototype as any, "getPixelRatio")
+      .mockImplementation(() => 1);
+    getComputedStyleMock = jest
+      .spyOn(window as any, "getComputedStyle")
+      .mockImplementation(() => {
+        return {
+          getPropertyValue: () => "1px",
+        };
+      });
+
+    drawStafsMock = jest
+      .spyOn(MusicSymbolDrawer.prototype as any, "drawStafs")
+      .mockImplementation(() => null);
+    drawClefsMock = jest
+      .spyOn(MusicSymbolDrawer.prototype as any, "drawClefs")
+      .mockImplementation(() => null);
+    drawNotesMock = jest.spyOn(MusicSymbolDrawer.prototype as any, "drawNotes");
+  });
+
+  test("init", async () => {
+    drawNotesMock.mockImplementationOnce(() => null);
+
+    new MusicSymbolDrawer(mockCanvas, window, sheetMusicStateMock);
+    expect(getContextMock).toHaveBeenCalled();
+    expect(loadImagesMock).toHaveBeenCalled();
+    await imagePromise;
+    expect(initCanvasMock).toHaveBeenCalledWith(window, sheetMusicStateMock);
+    expect(getPixelRatioMock).toHaveBeenCalledWith(window);
+    expect(getComputedStyleMock).toHaveBeenCalled();
+    expect(drawStafsMock).toHaveBeenCalledWith({ trebleClef: true });
+    expect(drawClefsMock).toHaveBeenCalledWith({ trebleClef: true });
+    expect(drawNotesMock).toHaveBeenCalledWith({ trebleClef: true });
+  });
+
+  describe("drawNotes", () => {
+    beforeAll(() => {
+      drawNotesMock = jest.spyOn(
+        MusicSymbolDrawer.prototype as any,
+        "drawNotes"
+      );
+      getNotePositionMock = jest.spyOn(
+        MusicSymbolDrawer.prototype as any,
+        "getNotePosition"
+      );
+      drawSmallLinesMock = jest
+        .spyOn(MusicSymbolDrawer.prototype as any, "drawSmallLines")
+        .mockImplementation(() => null);
+    });
+
+    test("does not draw if there are no notes", async () => {
+      new MusicSymbolDrawer(mockCanvas, window, sheetMusicStateMock);
+      await imagePromise;
+      expect(drawNotesMock).toHaveBeenCalledWith({ trebleClef: true });
+      expect(getNotePositionMock).not.toHaveBeenCalled();
+      expect(contextDrawImageMock).not.toHaveBeenCalled();
+    });
+
+    test("draws notes", async () => {
+      const newMusicStateMock = { notes: [{ clef: "treble", key: "C 4" }] };
+      new MusicSymbolDrawer(mockCanvas, window, newMusicStateMock);
+      await imagePromise;
+      expect(initCanvasMock).toHaveBeenCalledWith(window, newMusicStateMock);
+      expect(drawNotesMock).toHaveBeenCalledWith(
+        Object.assign({ trebleClef: true }, newMusicStateMock)
+      );
+      expect(getNotePositionMock).toHaveBeenCalledWith({
+        clef: "treble",
+        key: "C 4",
+      });
+      expect(contextDrawImageMock).toHaveBeenCalled();
+      expect(drawSmallLinesMock).toHaveBeenCalledWith(
+        { x: 208, y: 313.5 },
+        "treble"
+      );
+    });
+  });
+});

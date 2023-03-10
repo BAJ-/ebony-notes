@@ -1,0 +1,75 @@
+import * as React from 'react';
+import { Animator } from '../utils/animator';
+
+interface PracticeViewProps {
+  pianoConnected: boolean;
+}
+  
+interface ExtendedCanvasRenderingContext2D extends CanvasRenderingContext2D {
+  webkitBackingStorePixelRatio?: number;
+}
+
+export class PracticeView extends React.PureComponent<PracticeViewProps, unknown> {
+  private canvas: HTMLCanvasElement | undefined;
+  
+  private setCanvasRef = (canvas: HTMLCanvasElement) => {
+    this.canvas = canvas;
+  }
+    
+  private getPixelRatio(window: Window, context: ExtendedCanvasRenderingContext2D): number {
+    const backingStore = context.webkitBackingStorePixelRatio || 1;
+    return (window.devicePixelRatio || 1) / backingStore;
+  }
+    
+  private initCanvas(window: Window, context: ExtendedCanvasRenderingContext2D): void {
+    const ratio = this.getPixelRatio(window, context);
+    const width = parseInt(getComputedStyle(this.canvas).getPropertyValue('width').slice(0, -2));
+    const height = parseInt(getComputedStyle(this.canvas).getPropertyValue('height').slice(0, -2));
+    this.canvas.width = width * ratio;
+    this.canvas.height = height * ratio;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+  }
+  
+  componentDidMount(): void {
+    if (this.canvas) {
+      const context: ExtendedCanvasRenderingContext2D = this.canvas.getContext('2d');
+      this.initCanvas(window, context);
+      const animator = new Animator(window, context);
+      animator.addActor(new Actor());
+    }
+  }
+
+  render(): JSX.Element {
+    return (
+      <canvas ref={this.setCanvasRef} width="100%" height="100%" />
+    );
+  }
+}
+
+class Actor {
+  private color = '#ff0000';
+  private x = 200;
+  private y = 10;
+  private w = 100;
+  private h = 100;
+  
+  public draw(window: Window, context: CanvasRenderingContext2D): void {
+    
+
+    context.beginPath();
+    context.rect(this.x, this.y, this.w, this.h);
+    context.fillStyle = context.isPointInPath(this.x, this.y) ? "blue":"yellow";
+  }
+    
+  private isMouseOver(mousePosition: { x: number, y: number }): boolean {
+  }
+    
+  public onMouseOver(mousePosition: { x: number, y: number }): void {
+    if (this.isMouseOver(mousePosition)) {
+      this.color = '#00ff00';
+    } else {
+      this.color = '#ff0000';
+    }
+  }
+}

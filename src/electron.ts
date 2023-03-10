@@ -1,5 +1,5 @@
 import { app, BrowserWindow } from 'electron';
-import { PianoConnector } from './piano-connector';
+//import { PianoConnector } from './piano-connector';
 
 function createWindow (): BrowserWindow {
   // Create a browser window
@@ -22,7 +22,7 @@ app.on('ready', () => {
   const appWindow: BrowserWindow = createWindow();
   appWindow.on('ready-to-show', () => {
     appWindow.show();
-    new PianoConnector(appWindow);
+ //   new PianoConnector(appWindow);
   });
 });
 

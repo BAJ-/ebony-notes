@@ -3,7 +3,7 @@ export interface Note {
   clef: string;
 }
 
-interface SheetMusicState {
+export interface SheetMusicState {
   trebleClef?: boolean;
   bassClef?: boolean;
   notes?: Note[];
@@ -26,7 +26,9 @@ type Tones = {
   'F': number;
   'G': number;
 }
-
+/**
+ * Should be DrawController instead of SheetMusicDrawer
+ */
 export class MusicSymbolDrawer {
   private canvas: HTMLCanvasElement;
   private context: ExtendedCanvasRenderingContext2D;
@@ -57,12 +59,6 @@ export class MusicSymbolDrawer {
   protected quarterNoteImg: HTMLImageElement;
   protected quarterNoteSharpImg: HTMLImageElement;
   protected quarterNoteFlatImg: HTMLImageElement;
-
-  private assertContext(context: unknown): asserts context is CanvasRenderingContext2D {
-    if (context == null || !(context instanceof CanvasRenderingContext2D)) {
-      throw new Error('Canvas context was not found');
-    }
-  }
 
   constructor(canvas: HTMLCanvasElement, window: Window, sheetMusicState: SheetMusicState, options?: OptionProps) {
     this.canvas = canvas;
@@ -112,7 +108,6 @@ export class MusicSymbolDrawer {
 
   private getContext(): CanvasRenderingContext2D {
     const context = this.canvas.getContext('2d');
-    this.assertContext(context);
     return context;
   }
 
@@ -124,7 +119,7 @@ export class MusicSymbolDrawer {
     this.canvas.height = height * ratio;
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
-    
+
     this.draw(sheetMusicState);
   }
 

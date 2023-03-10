@@ -1,0 +1,8 @@
+import { getKeyFromHex } from "./tones";
+
+test("getKeyFromHex", () => {
+  expect(getKeyFromHex("15")).toBe("A 0");
+  expect(getKeyFromHex("38")).toBe("G# 3");
+  expect(getKeyFromHex("4B")).toBe("Eb 5");
+  expect(getKeyFromHex("55")).toBe("C# 6");
+});
